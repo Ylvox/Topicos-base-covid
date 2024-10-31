@@ -4,7 +4,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report, accuracy_score
 from sklearn.feature_selection import SelectFromModel
-from imblearn.over_sampling import RandomOverSampler
 from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import VotingClassifier
 from xgboost import XGBClassifier
@@ -12,7 +11,6 @@ from sklearn.svm import SVC
 import glob
 
 print("Aguarde q leva um tempo kk...")
-print("Tempo que levou para mim: 1m 17s")
 
 caminho_arquivos = "./datasets/"
 
@@ -30,9 +28,7 @@ X_test = test_df.drop(columns=['class'])
 y_test = test_df['class']
 
 # Seleção de características usando RandomForest
-selector = SelectFromModel(RandomForestClassifier(n_estimators=40, random_state=42), threshold="mean")
-#40 - 0.49
-#50 - 0.47
+selector = SelectFromModel(RandomForestClassifier(n_estimators=40, random_state=42, n_jobs=-1), threshold="mean")
 selector.fit(X_train, y_train)
 selected_features = X_train.columns[selector.get_support()]
 
@@ -40,13 +36,13 @@ selected_features = X_train.columns[selector.get_support()]
 X_train_selected = X_train[selected_features]
 X_test_selected = X_test[selected_features]
 
-# RandomOverSampler para balancear as classes no conjunto de treino
+# SMOTE para balancear as classes no conjunto de treino
 smote = SMOTE(random_state=42, k_neighbors=5)
 X_train_balanced, y_train_balanced = smote.fit_resample(X_train_selected, y_train)
 
 # Inicializar e configurar os modelos para Ensemble
-rf_model = RandomForestClassifier(random_state=42)
-xgb_model = XGBClassifier(eval_metric='mlogloss', random_state=42)
+rf_model = RandomForestClassifier(random_state=42, n_jobs=-1)
+xgb_model = XGBClassifier(eval_metric='mlogloss', random_state=42, n_jobs=-1)
 svc_model = SVC(probability=True, random_state=42)
 
 # Combinar os modelos com VotingClassifier
@@ -55,7 +51,7 @@ ensemble_model = VotingClassifier(
         ('rf', rf_model),
         ('xgb', xgb_model),
         ('svc', svc_model)
-    ], voting='soft'
+    ], voting='soft', n_jobs=-1
 )
 
 # Hiperparâmetros para ajuste de modelo
@@ -66,7 +62,7 @@ param_grid = {
 }
 
 # Usar GridSearchCV para ajuste dos hiperparâmetros
-grid_search = GridSearchCV(ensemble_model, param_grid, scoring='accuracy', cv=3)
+grid_search = GridSearchCV(ensemble_model, param_grid, scoring='accuracy', cv=3, n_jobs=-1)
 grid_search.fit(X_train_balanced, y_train_balanced)
 
 # Melhor modelo encontrado
