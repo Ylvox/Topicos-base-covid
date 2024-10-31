@@ -30,7 +30,9 @@ X_test = test_df.drop(columns=['class'])
 y_test = test_df['class']
 
 # Seleção de características usando RandomForest
-selector = SelectFromModel(RandomForestClassifier(n_estimators=100, random_state=42), threshold="mean")
+selector = SelectFromModel(RandomForestClassifier(n_estimators=40, random_state=42), threshold="mean")
+#40 - 0.49
+#50 - 0.47
 selector.fit(X_train, y_train)
 selected_features = X_train.columns[selector.get_support()]
 
